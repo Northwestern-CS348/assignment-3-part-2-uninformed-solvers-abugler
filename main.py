@@ -85,6 +85,49 @@ class KBTest(unittest.TestCase):
         th.reverseMove(movables[0])
         self.assertEqual(th.getGameState(), ((1,2,3),(),()))
 
+    def testHanoiGameState(self):
+        th = TowerOfHanoiGame()
+        th.read('hanoi_3_all_disks_on_peg_one.txt')
+        required = [
+            'fact: (movable disk1 peg3 peg1)',
+            'fact: (movable disk1 peg3 peg2)',
+        ]
+        th.setWinningCondition(required, 'hanoi_all_forbidden.txt')
+        self.assertFalse(th.isWon())
+        self.assertEqual(th.getGameState(), ((1,2,3),(),()))
+
+    def testTwoStep(self):
+        th = TowerOfHanoiGame()
+        th.read('hanoi_3_all_disks_on_peg_one.txt')
+        required = [
+            'fact: (movable disk1 peg3 peg1)',
+            'fact: (movable disk1 peg3 peg2)',
+        ]
+        th.setWinningCondition(required, 'hanoi_all_forbidden.txt')
+        self.assertFalse(th.isWon())
+        self.assertEqual(th.getGameState(), ((1,2,3),(),()))
+        movables = th.getMovables()
+        th.makeMove(movables[0])
+        self.assertEqual(th.getGameState(), ((2, 3), (1,), ()))
+        self.assertFalse(th.kb.kb_ask(Fact(Statement(["movable", "disk1", "peg1", "peg2"]))))
+        th.makeMove(Statement(["movable", "disk2", "peg1", "peg3"]))
+        self.assertFalse(th.kb.kb_ask(Fact(Statement(["TOP", "disk1", "peg2"]))))
+        self.assertEqual(th.getGameState(), ((3,), (1,), (2,)))
+
+    def testmoveitback(self):
+        th = TowerOfHanoiGame()
+        th.read('hanoi_3_all_disks_on_peg_one.txt')
+        required = [
+            'fact: (movable disk1 peg3 peg1)',
+            'fact: (movable disk1 peg3 peg2)',
+        ]
+        th.setWinningCondition(required, 'hanoi_all_forbidden.txt')
+        th.makeMove(Statement(["movable", "disk1", "peg1", "peg2"]))
+        th.makeMove(Statement(["movable", "disk1", "peg2", "peg1"]))
+        self.assertFalse(th.kb.kb_ask(Fact(Statement(["TOP", "peg1", "disk2"]))))
+
+
+
     def test02_DFS_Hanoi(self):
         th = TowerOfHanoiGame()
         th.read('hanoi_3_all_disks_on_peg_one.txt')
@@ -115,6 +158,52 @@ class KBTest(unittest.TestCase):
         self.assertFalse(th.isWon())
 
         solver = SolverDFS(th, ((),(),(1,2,3)))
+        self.runSolve(solver)
+
+    def testAllHanoi(self):
+        th = TowerOfHanoiGame()
+        th.read('hanoi_5_all_disks_on_peg_one.txt')
+        required = [
+            'fact: (movable disk1 peg3 peg1)',
+            'fact: (movable disk1 peg3 peg2)',
+        ]
+        th.setWinningCondition(required, 'hanoi_all_forbidden.txt')
+        self.assertFalse(th.isWon())
+
+        solver = SolverDFS(th, ((), (), (1, 2, 3, 4, 5)))
+        self.runSolve(solver)
+
+        solver = SolverBFS(th, ((), (), (1, 2, 3, 4, 5)))
+        self.runSolve(solver)
+
+        th = TowerOfHanoiGame()
+        th.read('hanoi_5_smallest_on_three_second_smallest_on_two.txt')
+        required = [
+            'fact: (movable disk1 peg3 peg1)',
+            'fact: (movable disk1 peg3 peg2)',
+        ]
+        th.setWinningCondition(required, 'hanoi_all_forbidden.txt')
+        self.assertFalse(th.isWon())
+
+        solver = SolverDFS(th, ((), (), (1, 2, 3, 4, 5)))
+        self.runSolve(solver)
+
+        solver = SolverBFS(th, ((), (), (1, 2, 3, 4, 5)))
+        self.runSolve(solver)
+
+        th = TowerOfHanoiGame()
+        th.read('hanoi_5_two_smallest_on_peg_three.txt')
+        required = [
+            'fact: (movable disk1 peg3 peg1)',
+            'fact: (movable disk1 peg3 peg2)',
+        ]
+        th.setWinningCondition(required, 'hanoi_all_forbidden.txt')
+        self.assertFalse(th.isWon())
+
+        solver = SolverDFS(th, ((), (), (1, 2, 3, 4, 5)))
+        self.runSolve(solver)
+
+        solver = SolverBFS(th, ((), (), (1, 2, 3, 4, 5)))
         self.runSolve(solver)
 
     def test04_BFS_Hanoi(self):
@@ -204,6 +293,38 @@ class KBTest(unittest.TestCase):
             [13, ((5, 4, 8), (-1, 6, 1), (7, 3, 2))],
             [21, ((6, 5, 4), (1, -1, 8), (7, 3, 2))],
         ])
+
+    def test8center(self):
+        p8 = Puzzle8Game()
+        p8.read('puzzle8_center_empty.txt')
+        required = [
+            'fact: (movable tile6 pos3 pos2 pos3 pos3)',
+            'fact: (movable tile8 pos2 pos3 pos3 pos3)',
+        ]
+        p8.setWinningCondition(required, 'puzzle8_all_forbidden.txt')
+        self.assertFalse(p8.isWon())
+
+        #solver = SolverDFS(p8, ((1,2,3),(4,5,6),(7,8,-1)))
+        #self.runSolve(solver)
+
+        solver = SolverBFS(p8, ((1,2,3),(4,5,6),(7,8,-1)))
+        self.runSolve(solver)
+
+    def test8righttop(self):
+        p8 = Puzzle8Game()
+        p8.read('puzzle8_top_right_empty.txt')
+        required = [
+            'fact: (movable tile6 pos3 pos2 pos3 pos3)',
+            'fact: (movable tile8 pos2 pos3 pos3 pos3)',
+        ]
+        p8.setWinningCondition(required, 'puzzle8_all_forbidden.txt')
+        self.assertFalse(p8.isWon())
+
+        #solver = SolverDFS(p8, ((1, 2, 3), (4, 5, 6), (7, 8, -1)))
+        #self.runSolve(solver)
+
+        solver = SolverBFS(p8, ((1, 2, 3), (4, 5, 6), (7, 8, -1)))
+        self.runSolve(solver)
 
 
 if __name__ == '__main__':
